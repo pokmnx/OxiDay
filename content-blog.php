@@ -84,7 +84,7 @@ $arr_term_dop=array();
 <figure>
 <?php
 if ( has_post_thumbnail() ) {
-$featured_img_url = get_the_post_thumbnail_url(get_the_ID(),'full'); 
+$featured_img_url = get_the_post_thumbnail_url(get_the_ID(),medium); 
 	?>
 	<img src="<?php print $featured_img_url;?>" alt="">
 	<?php

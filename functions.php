@@ -127,7 +127,7 @@ add_theme_support( 'post-thumbnails' );
 function create_media_post_type() {
 
 		$post_type_labels = array(
-			'name' => 'Media for sait',
+			'name' => 'Media for site',
 			'singular_name' =>'Media', 
 			'parent_item_colon' => '',
 		);
@@ -151,7 +151,32 @@ function create_media_post_type() {
  
 		register_post_type( 'media', $post_type_args );
 		 
+		 $post_type_labels = array(
+			'name' => 'Front page slider',
+			'singular_name' =>'Slider', 
+			'parent_item_colon' => '',
+		);
+
+		$post_type_args = array(
+			'labels' => apply_filters( 'inspiry_property_post_type_labels', $post_type_labels ),
+			'public' => true,
+			'publicly_queryable' => true,
+			'show_ui' => true,
+			'query_var' => true,
+			'has_archive' => true,
+			'capability_type' => 'post',
+			'hierarchical' => true,
+			'menu_icon' => 'dashicons-images-alt',
+			'menu_position' => 6,
+			'supports' => array( 'title', 'editor', 'thumbnail',  'page-attributes' ),
+			'rewrite' => array(
+				'slug' => apply_filters( 'inspiry_property_slug',  'slider' ),
+			),
+		);
+ 
+		register_post_type( 'slider', $post_type_args );
 		 
+
 $post_type_labels = array(
 			'name' => 'World Leaders Praise',
 			'singular_name' =>'World Leaders Praise', 
@@ -614,7 +639,6 @@ global $wp_query,$wpdb;
 $temp_query = $wp_query;
 
  
-
 $search_idproperty = $wpdb->get_results("SELECT meta_value FROM  `".$wpdb->prefix."postmeta`  WHERE  `meta_key` LIKE  'honorees_year' GROUP BY meta_value "); 
 foreach ($search_idproperty as $key=>$block)
 {
@@ -629,7 +653,15 @@ print '<div class="honorees_tab_links d-flex align-items-center">
 <div class="container">
 <ul class="honorees-slider-nav">
 '; 
-foreach ( $honorees_year_arr as $key=>$block ){print '<li data-nowyear="'.$block.'"><span>'.$block.'</span></li>';}
+foreach ( $honorees_year_arr as $key=>$block ){
+
+$args1 = array('post_type' => 'honorees', 'post_status'=>'publish','posts_per_page' =>-1,
+'meta_query' => array(array('key' => 'honorees_year','value' => $block,'compare' => '=')));
+$posts = new WP_Query( $args1 );  
+if ( $posts->have_posts() ) :
+print '<li data-nowyear="'.$block.'"><span>'.$block.'</span></li>';
+endif;
+}
 
 print '</ul></div></div>';
 }
@@ -998,8 +1030,10 @@ if ( isset($_REQUEST) ) {
 if ($_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest'){
 	$id=$_REQUEST['id']; 
 	 $nowpost=get_post( $id);
-	 print '<div class="recipient-item-content-container col-md-12"><div class="recipient-item-content-container-ins">
-	 <div class="recipient-item-content">'.$nowpost->post_content.'</div></div></div>';
+	 print '
+	 <div class="recipient-item-content-flex">
+	 <div class="recipient-item-content-container col-md-12"><div class="recipient-item-content-container-ins">
+	 <div class="recipient-item-content">'.$nowpost->post_content.'</div></div></div></div>';
 	  
  }
  }
@@ -1061,7 +1095,9 @@ $yu_channel_name=get_option('yu_channel_name');
 	        ?>          
 	    </form>
 		</div>
-	<?php
+	 <?php
+	  
+	
 }
 
 function add_theme_menu_item()
@@ -1464,6 +1500,7 @@ while ( $posts->have_posts() ) {
 	if ( has_post_thumbnail() ) {
 $featured_img_url = get_the_post_thumbnail_url(get_the_ID(),'full'); 
 	?>
+	<div class="home_news_slider_img_bg"></div>
 	<img src="<?php print $featured_img_url;?>" alt="">
 	<?php
 }
@@ -1496,232 +1533,7 @@ $wp_query = NULL;
 $wp_query = $temp_query;
 }
 add_shortcode('show_home_news', 'show_home_news_func');
-
- 
-function my_cron_schedules($schedules){
-    if(!isset($schedules["5min"])){
-        $schedules["5min"] = array(
-            'interval' => 2*60,
-            'display' => __('Once every 5 minutes'));
-    }
-    if(!isset($schedules["30min"])){
-        $schedules["30min"] = array(
-            'interval' => 30*60,
-            'display' => __('Once every 30 minutes'));
-    }
-    return $schedules;
-}
-add_filter('cron_schedules','my_cron_schedules');
- /*
-function schedule_my_cron(){
-    wp_schedule_event(time(), '5min', 'import_oxidayfoundation_cron');
-}
-if(!wp_get_schedule('import_oxidayfoundation_cron')){
-    add_action('init', 'schedule_my_cron',10);
-} 
- */
-//if( !wp_next_scheduled('oxidayfoundation_hook' ) ) wp_schedule_event( time(), 'hourly', 'oxidayfoundation_hook' );
-//add_action( 'oxidayfoundation_hook', 'import_oxidayfoundation_cron' );
-if( !wp_next_scheduled('oxidayfoundation_hook' ) ) wp_schedule_event( time(), '5min', 'oxidayfoundation_hook' );
-add_action( 'oxidayfoundation_hook', 'import_oxidayfoundation_cron' );
-function import_oxidayfoundation_cron() {
-global $wpdb;
- 
- 
-$args = array('taxonomy' => 'media-category','hide_empty' => false,'orderby'=>'title','order'=>'desc');
-$photos_id=0;
-$terms = get_terms( $args );
-foreach ($terms as $termses) : 
-$category_media_type = get_field('category_media_type', $termses);
-if ($category_media_type=='photos') $photos_id=$termses->term_id;
-endforeach;
-
-if ($photos_id!=0)
-{
-$userId=get_option('flickr_user_id');
-$apiKey=get_option('flickr_api_key'); 
- 
-$photos = simplexml_load_file("https://api.flickr.com/services/rest/?method=flickr.photosets.getList&api_key=$apiKey&user_id=$userId");              
-if (isset($photos->photosets->photoset))
-{
-$perPage = 500;
-if (isset($photos->photosets['per_page'][0]))$perPage = $photos->photosets['per_page'][0]; 
- 
- for ($p = 0; $p < $perPage; $p++) {
- if (!empty($photos->photosets->photoset[$p]['id'])) { 	 	
-	$search = $wpdb->get_results("SELECT post_id  FROM {$wpdb->postmeta} WHERE meta_key='oxiday_photoset_id' AND meta_value='".$photos->photosets->photoset[$p]['id']."'  ");	
-	
-	if (count($search)==0)
-	{		
-	
-	
-		if (!empty($photos->photosets->photoset[$p]->title)) {
-			$title=(string)$photos->photosets->photoset[$p]->title;
-			$ids=(string)$photos->photosets->photoset[$p]['id'];
-			$post_excerpt='';
-			if (isset ($photos->photosets->photoset[$p]->description)) $post_excerpt=(string)$photos->photosets->photoset[$p]->description;
-			$save_date=current_time('mysql') ;
-			if (isset($photos->photosets->photoset[$p]['date_create']))
-			{
-				$date_create=(int)$photos->photosets->photoset[$p]['date_create'];
-				$d =   DateTime::createFromFormat('U', $date_create); 
-				$save_date=$d->format("Y-m-d H:i:s.u");
-			}
-			
-			$post_data = array(
-					'post_title'    => wp_strip_all_tags($title), 
-					'post_status'   => 'publish',
-					'post_excerpt'=>$post_excerpt,
-					'post_type'=>'media', 
-					'post_date'=>$save_date
-					);//new post
-			$post_id = wp_insert_post( $post_data );
-			update_post_meta($post_id, 'oxiday_photoset_id',$ids) ;	 
-			$wpdb->query("INSERT INTO `".$wpdb->prefix."term_relationships` (`object_id`, `term_taxonomy_id`, `term_order`) VALUES (".$post_id.", '".$photos_id."', '0');");
-			
-			$id = $photos->photosets->photoset[$p]['primary'];    
-        $secret = $photos->photosets->photoset[$p]['secret'];
-        $server = $photos->photosets->photoset[$p]['server'];
-        $farm = $photos->photosets->photoset[$p]['farm'];						
-		$img_url = "http://farm$farm.static.flickr.com/$server/".$id."_".$secret."_h.jpg";
-		
-			$filename=$id."_".$secret.".jpg";
-			$uploaddir = wp_upload_dir();
-			$uploadfile = $uploaddir['path'] . '/' . $filename;
-			$contents= file_get_contents($img_url);
-			$savefile = fopen($uploadfile, 'w');
-			fwrite($savefile, $contents);
-			fclose($savefile);
-			$wp_filetype = wp_check_filetype(basename($filename), null );
-			$attachment = array(
-			'post_mime_type' => $wp_filetype['type'],
-			'post_title' => $filename,
-			'post_content' => '',
-			'post_status' => 'inherit'
-			);
-			$attach_id = wp_insert_attachment( $attachment, $uploadfile );
-			$imagenew = get_post( $attach_id );
-			$fullsizepath = get_attached_file( $imagenew->ID );
-			$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
-			wp_update_attachment_metadata( $attach_id, $attach_data );
-			set_post_thumbnail( $post_id, $attach_id ) ;	
-			update_post_meta($post_id, 'big_image',$attach_id) ;	
-			
-			
- 
-			
-		}
-	}
-	 
- }
- }
-
-}
-}
-
-
-
-
-
-
-
-
-
-
-/*  video  */
-$apiKey=get_option('google_api_key');
-$channel_name=get_option('yu_channel_name');
- 
-$args = array('taxonomy' => 'media-category','hide_empty' => false,'orderby'=>'title','order'=>'desc');
-$video_id=0;
-$terms = get_terms( $args );
-foreach ($terms as $termses) : 
-$category_media_type = get_field('category_media_type', $termses); 
-if ($category_media_type=='video') $video_id=$termses->term_id;
-endforeach; 
-if ($video_id!=0)
-{ 
-require_once  dirname(__FILE__).'/vendor/autoload.php'; 
-$client = getClient($apiKey);	
-$service = new Google_Service_YouTube($client);
-$lastChannel = $service->channels->listChannels('snippet, contentDetails, statistics', array('forUsername' => $channel_name,));
-      
-if (isset($lastChannel->items[0]->contentDetails->relatedPlaylists->uploads))
-{
-	$playlistId=$lastChannel->items[0]->contentDetails->relatedPlaylists->uploads;
-	$params = ['playlistId' =>$playlistId,'maxResults'=> 50];
-	$response = $service->playlistItems->listPlaylistItems('snippet,contentDetails', $params);
-	if (isset($response->items))
-	{
-	$i=1;
-		foreach ($response->items as $key=>$block)
-		{
-			
-			
-			if (isset($block->contentDetails->videoId))
-			{
-				$videoId=(string)$block->contentDetails->videoId;
-				
-	$search = $wpdb->get_results("SELECT post_id  FROM {$wpdb->postmeta} WHERE meta_key='oxiday_video_id' AND meta_value='".$videoId."'  ");		
-	if (count($search)==0)
-	{				 
-				$title=(string)$block->snippet->title;
-				$description=(string)$block->snippet->description;
-				$post_excerpt=(string)$block->snippet->description;
-				$thumbnails='';  
-				$publishedAt=current_time('mysql');
-				if (isset($block->snippet->publishedAt))$publishedAt=$block->snippet->publishedAt;
-				 
-				$post_data = array(
-					'post_title'    => wp_strip_all_tags($title), 
-					'post_status'   => 'publish',
-					'post_excerpt'=>$post_excerpt,
-					'post_type'=>'media', 
-					'post_content'  => $description,
-					'post_date'=>$publishedAt 
-					); 
-				$post_id = wp_insert_post( $post_data );
-				update_post_meta($post_id, 'oxiday_video_id',$videoId) ;	 
-				$wpdb->query("INSERT INTO `".$wpdb->prefix."term_relationships` (`object_id`, `term_taxonomy_id`, `term_order`) VALUES (".$post_id.", '".$video_id."', '0');");
-				  
-				if (isset($block->snippet->thumbnails->standard->url))
-				{
-					$filename= $videoId.'_'.basename($block->snippet->thumbnails->standard->url);
-					$uploaddir = wp_upload_dir();
-					$uploadfile = $uploaddir['path'] . '/' . $filename;
-					$contents= file_get_contents($block->snippet->thumbnails->standard->url);
-					$savefile = fopen($uploadfile, 'w');
-					fwrite($savefile, $contents);
-					fclose($savefile);
-					$wp_filetype = wp_check_filetype(basename($filename), null );
-					$attachment = array(
-						'post_mime_type' => $wp_filetype['type'],
-						'post_title' => $filename,
-						'post_content' => '',
-						'post_status' => 'inherit'
-					);
-					$attach_id = wp_insert_attachment( $attachment, $uploadfile );
-					$imagenew = get_post( $attach_id );
-					$fullsizepath = get_attached_file( $imagenew->ID );
-					$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
-					wp_update_attachment_metadata( $attach_id, $attach_data );
-					set_post_thumbnail( $post_id, $attach_id ) ;	
-					update_post_meta($post_id, 'big_image',$attach_id) ;
-				} 
-				 
-			}
-			 
-		
-		}
-		}
-	
-	}
-} 
-}
-
- 
-}
-
+  
 
 
 function getClient($apiKey) {$client = new Google_Client();$client->setDeveloperKey($apiKey);  return $client;}
@@ -1905,3 +1717,368 @@ $wp_query = $temp_query;
 }
 }
 add_shortcode('show_schedule_year', 'show_schedule_year_func');
+add_shortcode('show_home_slider', 'show_home_slider_func');
+
+function show_home_slider_func() {
+	global $wp_query;
+$temp_query = $wp_query;
+$slider_args = array(
+                                'post_type' => 'slider',
+                                'posts_per_page' => -1,
+                                 'orderby'=>'menu_order','order'=>'asc'
+                            );
+$posts = new WP_Query( $slider_args );
+ if ( $posts->have_posts() )
+  {
+  ?>
+  <div class="slider_slick_home">
+  
+<?php
+while ( $posts->have_posts() ) {
+  $posts->the_post();
+  $featured_img_url='';
+  
+  if ( has_post_thumbnail() ) {
+$featured_img_url = get_the_post_thumbnail_url(get_the_ID(), 'full'); 
+}
+
+ 
+  ?>
+  <div class="item">
+  <div class="container">
+  <div class="row">
+  	<div class="raw col-md-10">
+<div class="slider_text">
+  <h2><?php the_title();?></h2>
+  <h3><?php the_excerpt();?></h3>
+  <?php
+  $button_text_slider=get_post_meta(get_the_ID(), 'button_text_slider') ;
+  $button_link_slider=get_post_meta(get_the_ID(), 'button_link_slider') ;
+  
+  if (isset($button_link_slider[0])  AND isset($button_text_slider[0]))
+  {
+  print '<div class="button_oval_link "><a href="'.$button_link_slider[0].'"  >'.$button_text_slider[0].'</a></div>';
+  }
+  ?>
+  </div>
+    </div>
+    </div></div>
+<?php
+if ($featured_img_url!='')
+{
+	?>
+	<div class="home_main_slider_img_bg"></div>
+ <div class="bg_img" style="background: url(<?php print $featured_img_url;?>) center center;"></div>
+</div>
+	<?php
+}
+ 
+    } ?>
+ </div>
+<?php
+}
+?>
+
+ <?php
+  wp_reset_postdata();
+ $wp_query = NULL;
+$wp_query = $temp_query;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if( !wp_next_scheduled('oxidayfoundation_hook' ) ) wp_schedule_event( time(), 'hourly', 'oxidayfoundation_hook' );
+add_action( 'oxidayfoundation_hook', 'import_oxidayfoundation_cron' );
+
+function import_oxidayfoundation_cron() {
+global $wpdb;
+  
+
+ 
+$args = array('taxonomy' => 'media-category','hide_empty' => false,'orderby'=>'title','order'=>'desc');
+$photos_id=0;
+$terms = get_terms( $args );
+foreach ($terms as $termses) : 
+$category_media_type = get_field('category_media_type', $termses);
+if ($category_media_type=='photos') $photos_id=$termses->term_id;
+endforeach;
+
+
+if ($photos_id!=0)
+{
+ 
+$userId=get_option('flickr_user_id');
+$apiKey=get_option('flickr_api_key'); 
+ 
+$photos = simplexml_load_file("https://api.flickr.com/services/rest/?method=flickr.photosets.getList&api_key=$apiKey&user_id=$userId&primary_photo_extras=url_o,url_m");              
+if (isset($photos->photosets->photoset))
+{
+
+$perPage = 500;
+if (isset($photos->photosets['per_page'][0]))$perPage = $photos->photosets['per_page'][0]; 
+ 
+ for ($p = 0; $p < $perPage; $p++) {
+ if (!empty($photos->photosets->photoset[$p]['id'])) { 	 	
+	$search = $wpdb->get_results("SELECT post_id  FROM {$wpdb->postmeta} WHERE meta_key='oxiday_photoset_id' AND meta_value='".$photos->photosets->photoset[$p]['id']."'  ");	
+	
+	if (count($search)==0)
+	{		
+	if (!empty($photos->photosets->photoset[$p]->title)) {
+			$title=(string)$photos->photosets->photoset[$p]->title;
+			$ids=(string)$photos->photosets->photoset[$p]['id'];
+			$post_excerpt='';
+			if (isset ($photos->photosets->photoset[$p]->description)) $post_excerpt=(string)$photos->photosets->photoset[$p]->description;
+			$save_date=current_time('mysql') ;
+			if (isset($photos->photosets->photoset[$p]['date_create']))
+			{
+				$date_create=(int)$photos->photosets->photoset[$p]['date_create'];
+				$d =   DateTime::createFromFormat('U', $date_create); 
+				$save_date=$d->format("Y-m-d H:i:s.u");
+			}
+			
+			$post_data = array(
+					'post_title'    => wp_strip_all_tags($title), 
+					'post_status'   => 'publish',
+					'post_excerpt'=>$post_excerpt,
+					'post_type'=>'media', 
+					'post_date'=>$save_date
+					);//new post
+			$post_id = wp_insert_post( $post_data );
+			update_post_meta($post_id, 'oxiday_photoset_id',$ids) ;	
+			
+			$primary_photo_extras=(string)$photos->photosets->photoset[$p]->primary_photo_extras['url_m']; 
+			$filename=basename($primary_photo_extras);
+			$uploaddir = wp_upload_dir();
+			$uploadfile = $uploaddir['path'] . '/' . $filename;
+			$contents= file_get_contents($primary_photo_extras);
+			$savefile = fopen($uploadfile, 'w');
+			fwrite($savefile, $contents);
+			fclose($savefile);
+			$wp_filetype = wp_check_filetype(basename($filename), null );
+			$attachment = array(
+			'post_mime_type' => $wp_filetype['type'],
+			'post_title' => $filename,
+			'post_content' => '',
+			'post_status' => 'inherit'
+			);
+			$attach_id = wp_insert_attachment( $attachment, $uploadfile );
+			$imagenew = get_post( $attach_id );
+			$fullsizepath = get_attached_file( $imagenew->ID );
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+			set_post_thumbnail( $post_id, $attach_id ) ;	
+			
+			
+			
+			$primary_photo_extras=(string)$photos->photosets->photoset[$p]->primary_photo_extras['url_o'];
+			 $filename=basename($primary_photo_extras);
+			$uploaddir = wp_upload_dir();
+			$uploadfile = $uploaddir['path'] . '/' . $filename;
+			$contents= file_get_contents($primary_photo_extras);
+			$savefile = fopen($uploadfile, 'w');
+			fwrite($savefile, $contents);
+			fclose($savefile);
+			$wp_filetype = wp_check_filetype(basename($filename), null );
+			$attachment = array(
+			'post_mime_type' => $wp_filetype['type'],
+			'post_title' => $filename,
+			'post_content' => '',
+			'post_status' => 'inherit'
+			);
+			$attach_id = wp_insert_attachment( $attachment, $uploadfile );
+			$imagenew = get_post( $attach_id );
+			$fullsizepath = get_attached_file( $imagenew->ID );
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
+			wp_update_attachment_metadata( $attach_id, $attach_data ); 
+			update_post_meta($post_id, 'big_image',$attach_id) ;
+		}
+	}
+	else
+	{
+	if (isset($search[0]))
+	{ 
+		
+		$post_id_f= $search[0]->post_id; 			
+		$err=0;
+		if ( has_post_thumbnail($post_id_f) ) {
+		$featured_img_url = get_the_post_thumbnail_url($post_id_f,'full');
+		if(@getimagesize($featured_img_url)){ $err++;   }
+		}
+		$err=0;
+		 
+		if ($err==0)
+		{
+			$primary_photo_extras=(string)$photos->photosets->photoset[$p]->primary_photo_extras['url_m']; 
+			$filename=basename($primary_photo_extras);
+			$uploaddir = wp_upload_dir();
+			$uploadfile = $uploaddir['path'] . '/' . $filename;
+			$contents= file_get_contents($primary_photo_extras);
+			$savefile = fopen($uploadfile, 'w');
+			fwrite($savefile, $contents);
+			fclose($savefile);
+			$wp_filetype = wp_check_filetype(basename($filename), null );
+			$attachment = array(
+			'post_mime_type' => $wp_filetype['type'],
+			'post_title' => $filename,
+			'post_content' => '',
+			'post_status' => 'inherit'
+			);
+			$attach_id = wp_insert_attachment( $attachment, $uploadfile );
+			$imagenew = get_post( $attach_id );
+			$fullsizepath = get_attached_file( $imagenew->ID );
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
+			wp_update_attachment_metadata( $attach_id, $attach_data );
+			set_post_thumbnail( $post_id_f, $attach_id ) ;	
+			 
+		}
+		
+		$big_image = get_field('big_image',$post_id_f);
+		$big_image='';
+		if ($big_image=='') {
+		$primary_photo_extras=(string)$photos->photosets->photoset[$p]->primary_photo_extras['url_o'];
+			 $filename=basename($primary_photo_extras);
+			$uploaddir = wp_upload_dir();
+			$uploadfile = $uploaddir['path'] . '/' . $filename;
+			$contents= file_get_contents($primary_photo_extras);
+			$savefile = fopen($uploadfile, 'w');
+			fwrite($savefile, $contents);
+			fclose($savefile);
+			$wp_filetype = wp_check_filetype(basename($filename), null );
+			$attachment = array(
+			'post_mime_type' => $wp_filetype['type'],
+			'post_title' => $filename,
+			'post_content' => '',
+			'post_status' => 'inherit'
+			);
+			$attach_id = wp_insert_attachment( $attachment, $uploadfile );
+			$imagenew = get_post( $attach_id );
+			$fullsizepath = get_attached_file( $imagenew->ID );
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
+			wp_update_attachment_metadata( $attach_id, $attach_data ); 
+			update_post_meta($post_id_f, 'big_image',$attach_id) ;
+			}
+		
+	}
+	}
+}
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+/*  video  */
+$apiKey=get_option('google_api_key');
+$channel_name=get_option('yu_channel_name');
+ 
+$args = array('taxonomy' => 'media-category','hide_empty' => false,'orderby'=>'title','order'=>'desc');
+$video_id=0;
+$terms = get_terms( $args );
+foreach ($terms as $termses) : 
+$category_media_type = get_field('category_media_type', $termses); 
+if ($category_media_type=='video') $video_id=$termses->term_id;
+endforeach; 
+if ($video_id!=0)
+{ 
+require_once  dirname(__FILE__).'/vendor/autoload.php'; 
+$client = getClient($apiKey);	
+$service = new Google_Service_YouTube($client);
+$lastChannel = $service->channels->listChannels('snippet, contentDetails, statistics', array('forUsername' => $channel_name,));
+      
+if (isset($lastChannel->items[0]->contentDetails->relatedPlaylists->uploads))
+{
+	$playlistId=$lastChannel->items[0]->contentDetails->relatedPlaylists->uploads;
+	$params = ['playlistId' =>$playlistId,'maxResults'=> 50];
+	$response = $service->playlistItems->listPlaylistItems('snippet,contentDetails', $params);
+	if (isset($response->items))
+	{
+	$i=1;
+		foreach ($response->items as $key=>$block)
+		{
+			
+			
+			if (isset($block->contentDetails->videoId))
+			{
+				$videoId=(string)$block->contentDetails->videoId;
+				
+	$search = $wpdb->get_results("SELECT post_id  FROM {$wpdb->postmeta} WHERE meta_key='oxiday_video_id' AND meta_value='".$videoId."'  ");		
+	if (count($search)==0)
+	{				 
+				$title=(string)$block->snippet->title;
+				$description=(string)$block->snippet->description;
+				$post_excerpt=(string)$block->snippet->description;
+				$thumbnails='';  
+				$publishedAt=current_time('mysql');
+				if (isset($block->snippet->publishedAt))$publishedAt=$block->snippet->publishedAt;
+				 
+				$post_data = array(
+					'post_title'    => wp_strip_all_tags($title), 
+					'post_status'   => 'publish',
+					'post_excerpt'=>$post_excerpt,
+					'post_type'=>'media', 
+					'post_content'  => $description,
+					'post_date'=>$publishedAt 
+					); 
+				$post_id = wp_insert_post( $post_data );
+				update_post_meta($post_id, 'oxiday_video_id',$videoId) ;	 
+				$wpdb->query("INSERT INTO `".$wpdb->prefix."term_relationships` (`object_id`, `term_taxonomy_id`, `term_order`) VALUES (".$post_id.", '".$video_id."', '0');");
+				  
+				if (isset($block->snippet->thumbnails->standard->url))
+				{
+					$filename= $videoId.'_'.basename($block->snippet->thumbnails->standard->url);
+					$uploaddir = wp_upload_dir();
+					$uploadfile = $uploaddir['path'] . '/' . $filename;
+					$contents= file_get_contents($block->snippet->thumbnails->standard->url);
+					$savefile = fopen($uploadfile, 'w');
+					fwrite($savefile, $contents);
+					fclose($savefile);
+					$wp_filetype = wp_check_filetype(basename($filename), null );
+					$attachment = array(
+						'post_mime_type' => $wp_filetype['type'],
+						'post_title' => $filename,
+						'post_content' => '',
+						'post_status' => 'inherit'
+					);
+					$attach_id = wp_insert_attachment( $attachment, $uploadfile );
+					$imagenew = get_post( $attach_id );
+					$fullsizepath = get_attached_file( $imagenew->ID );
+					$attach_data = wp_generate_attachment_metadata( $attach_id, $fullsizepath );
+					wp_update_attachment_metadata( $attach_id, $attach_data );
+					set_post_thumbnail( $post_id, $attach_id ) ;	
+					update_post_meta($post_id, 'big_image',$attach_id) ;
+				} 
+				 
+			}
+			 
+		
+		}
+		}
+	
+	}
+} 
+}
+
+ 
+}

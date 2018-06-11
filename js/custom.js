@@ -4,11 +4,19 @@ function map_height()
 	 jQuery('.mapblock .wpb_map_wraper').height(mapblock);
 }
 
+function home_slider_height()
+{
+    var header_height=jQuery('.header').height();
+	jQuery('.hero-banner').css('height','calc(100vh - ' + header_height+ 'px)');
+	var mapblock =jQuery('.hero-banner').height();
+	 jQuery('.slider_slick_home .item').height(mapblock);
+}
+
 jQuery(document).ready(function($){
 
-map_height(); 
+map_height();  home_slider_height();
 $(window).resize(function(){
-		map_height();
+		map_height();home_slider_height();
 	}); 
 
 	
@@ -303,6 +311,19 @@ else
 			}); 
 			jQuery('.news .news-item').height(max);
 		});
+	$('.slider_slick_home').not('.slick-initialized').slick({
+  dots: false,
+  infinite: false,
+  speed: 300,
+  centerMode: false,
+  slidesToShow:1, 
+  slidesToScroll: 1,   
+prevArrow: '<button type="button" data-role="none" class="slick-prev slick-arrow" aria-label="Previous" role="button" ></button>',
+	  nextArrow: '<button type="button" data-role="none" class="slick-next slick-arrow" aria-label="Next" role="button" ></button>' ,
+	  autoplay: true,
+  autoplaySpeed: 4000
+});
+	
 	
 	
 });
@@ -312,9 +333,9 @@ function show_recipient(id,cat,com,plans,mob)
 {	
 	var winWidth=jQuery(document).width();
 	jQuery(window).resize(function(){winWidth=jQuery(document).width();}); 
-	jQuery('.show_block_content_hide_comp').removeClass('active');
-	jQuery('.show_block_content_hide_plans').removeClass('active');
-	jQuery('.show_block_content_hide_mob').removeClass('active');		
+	jQuery('.show_block_content_hide_comp').slideUp("slow");
+	jQuery('.show_block_content_hide_plans').slideUp("slow");
+	jQuery('.show_block_content_hide_mob').slideUp("slow");;		
 	var now=jQuery('#show_recipient'+id+'_'+cat); 
 	if (!now.hasClass('activeborder'))
 	{
@@ -323,20 +344,20 @@ function show_recipient(id,cat,com,plans,mob)
 	now.addClass('activeborder');
 	if (winWidth>768)
 	{
-		jQuery('#show_block_content_hide_comp'+cat+'_'+com).html(data);
-		jQuery('#show_block_content_hide_comp'+cat+'_'+com).addClass('active');	
+		jQuery('#show_block_content_hide_comp'+cat+'_'+com).html(data); 
+		jQuery('#show_block_content_hide_comp'+cat+'_'+com).slideDown('slow');	
 	}
 	else
 	{
 		if (winWidth>575)
 		{  
 			jQuery('#show_block_content_hide_plans'+cat+'_'+plans).html(data);
-			jQuery('#show_block_content_hide_plans'+cat+'_'+plans).addClass('active');
+			jQuery('#show_block_content_hide_plans'+cat+'_'+plans).slideDown('slow');	
 		}
 		else
 		{		 			
 			jQuery('#show_block_content_hide_mob'+cat+'_'+mob).html(data);
-			jQuery('#show_block_content_hide_mob'+cat+'_'+mob).addClass('active');			
+			jQuery('#show_block_content_hide_mob'+cat+'_'+mob).slideDown('slow');				
 		}
 	}	
 	} }); 
@@ -357,10 +378,10 @@ function show_recipient_heroes(id,com,com_s,plans,mob)
 {	
 	var winWidth=jQuery(document).width();
 	jQuery(window).resize(function(){winWidth=jQuery(document).width();}); 
-	jQuery('.show_block_content_hide_comp').removeClass('active');
-	jQuery('.show_block_content_hide_comp_s').removeClass('active');	
-	jQuery('.show_block_content_hide_plans').removeClass('active');
-	jQuery('.show_block_content_hide_mob').removeClass('active');		
+	jQuery('.show_block_content_hide_comp').slideUp("slow");	
+	jQuery('.show_block_content_hide_comp_s').slideUp("slow");		
+	jQuery('.show_block_content_hide_plans').slideUp("slow");
+	jQuery('.show_block_content_hide_mob').slideUp("slow");		
 	var now=jQuery('#show_recipient'+id); 
 	if (!now.hasClass('activeborder'))
 	{
@@ -370,23 +391,23 @@ function show_recipient_heroes(id,com,com_s,plans,mob)
 	if (winWidth>991)
 	{
 		jQuery('#show_block_content_hide_comp'+com).html(data);
-		jQuery('#show_block_content_hide_comp'+com).addClass('active');	
+		jQuery('#show_block_content_hide_comp'+com).slideDown('slow');	
 	}
 	else
 	{
 		if (winWidth>787)
 		{  
 			jQuery('#show_block_content_hide_comp_s'+com_s).html(data);
-			jQuery('#show_block_content_hide_comp_s'+com_s).addClass('active');
+			jQuery('#show_block_content_hide_comp_s'+com_s).slideDown('slow');	
 		}
 		else if (winWidth>480)
 		{  
 			jQuery('#show_block_content_hide_plans'+plans).html(data);
-			jQuery('#show_block_content_hide_plans'+plans).addClass('active');
+			jQuery('#show_block_content_hide_plans'+plans).slideDown('slow');	
 		} else
 		{		 			
 			jQuery('#show_block_content_hide_mob'+mob).html(data);
-			jQuery('#show_block_content_hide_mob'+mob).addClass('active');			
+			jQuery('#show_block_content_hide_mob'+mob).slideDown('slow');				
 		}
 	}	
 	} }); 

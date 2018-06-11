@@ -42,8 +42,8 @@ $big_image = get_field('big_image',$post->ID);
 <div class="page-banner-text-block text-center montserrat-font font-weight-600">
 <?php if ($cat_id!=0 AND $cat_term!='')
 {
-	$image_post_category=get_field('image_post_category', $cat_term);
-if (isset($image_post_category['url'])) print '<span><img src="'.$image_post_category['url'].'"></span>';
+	$image_post_category=get_field('svgimage_post_category', $cat_term); 
+if (isset($image_post_category)) print '<span>'.$image_post_category.'</span>';
 }
 if ($cat_title!='') print '<span>'.$cat_title.'</span>';
 ?>
@@ -68,7 +68,7 @@ if ($template_for_post==1)
 else
 {
 ?>
-<section class="vc_section section-2 white-bg-color about-intro container"><div class="row"><div class="col-md-12">
+<section class="vc_section section-2 white-bg-color about-intro container single_content"><div class="row"><div class="col-md-12">
 <?php the_content();  ?>
 </div></div></section>
 <?

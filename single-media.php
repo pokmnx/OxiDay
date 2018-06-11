@@ -51,7 +51,7 @@ else
 <div class="page-banner-text-block text-center montserrat-font font-weight-600">
 <?php if ($cat_id!=0 AND $cat_term!='')
 {
-	$image_post_category=get_field('image_post_category', $cat_term); 
+	$image_post_category=get_field('svgimage_post_category', $cat_term); 
 	$title_for_media_category = get_field('title_for_media_category', $cat_term);
 	if ($title_for_media_category!='') $cat_title=$title_for_media_category;    
 $cat_img='';	

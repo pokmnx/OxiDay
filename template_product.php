@@ -96,7 +96,16 @@ print '</ul></div>';
 
 
 <div class="philotimo-gallery-footer text-center">
-<a href="#" class="btn text-uppercase gradient-red-linear">Buy Now</a>
+<?
+$button_text_product = get_field('button_text_product',$post->ID);
+$button_link_product = get_field('button_link_product',$post->ID); 
+ if ($button_text_product!='' AND $button_link_product!='')
+ {
+ print '<a href="'.$button_link_product.'" class="btn text-uppercase gradient-red-linear">'.$button_text_product.'</a>';
+ }
+?>
+
+
 <p class="text-md blue-color montserrat-font">
 <?
 $price_product = get_field('price_product',$post->ID);

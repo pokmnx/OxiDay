@@ -486,8 +486,8 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000073bb', e
 
 
 @media(max-width:1300px){
-	.honorees-slider-nav .slick-arrow.slick-prev{left:0;}
-	.honorees-slider-nav .slick-arrow.slick-next{right:0;}
+	.honorees-slider-nav .slick-arrow.slick-prev{left:0;z-index: 10;}
+	.honorees-slider-nav .slick-arrow.slick-next{right:0;z-index: 10;}
 }
 @media(min-width:1211px){
 	.news-letter h3{font-size:48px;}
@@ -743,3 +743,5 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000073bb', e
 @media(max-width:480px){
 	.ribbon-button-wrap .button-oval-o{font-size:12px; border-width:1px; padding:0 15px;}
 }
+.padding_20px {padding: 20px;}
+.padding_bottom_0px {   color: #004c98 !important;     font-weight: 500;     font-family: 'Montserrat', sans-serif;text-transform: uppercase!important; text-align: center!important;padding-bottom:0px;}

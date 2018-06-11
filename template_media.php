@@ -98,7 +98,7 @@ $posts = new WP_Query( $args1 );
 	{
 	$title_for_media_category = get_field('title_for_media_category', $category[0]);
 	if ($title_for_media_category!='') $cat_title=$title_for_media_category; else $cat_title=$category[0]->name; 
-	$image_post_category = get_field('image_post_category', $category[0]);
+	$image_post_category = get_field('svgimage_post_category', $category[0]);
 	if (isset($image_post_category['url'])) $cat_img='<span class="d-inline-block news-item-icon"><img src="'.$image_post_category['url'].'" alt=""></span>';	
 	$svgimage_post_category = get_field('svgimage_post_category', $category[0]);
 	if ($svgimage_post_category!='')
@@ -114,7 +114,7 @@ $posts = new WP_Query( $args1 );
 <figure>
 <?php
 if ( has_post_thumbnail() ) {
-$featured_img_url = get_the_post_thumbnail_url(get_the_ID(),'pic_350_350'); 
+$featured_img_url = get_the_post_thumbnail_url(get_the_ID(),medium); 
 	?>
 	<img src="<?php print $featured_img_url;?>" alt="">
 	<?php
